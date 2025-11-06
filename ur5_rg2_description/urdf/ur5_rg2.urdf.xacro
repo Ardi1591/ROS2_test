@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<robot name="ur5_rg2" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- bring in official UR xacros -->
+  <xacro:include filename="$(find ur_description)/urdf/ur.urdf.xacro"/>
+
+  <!-- parameters -->
+  <xacro:arg name="ur_type" default="ur5"/>
+  <xacro:arg name="prefix" default=""/>
+  <xacro:arg name="safety_limits" default="true"/>
+  <xacro:arg name="safety_pos_margin" default="0.15"/>
+  <xacro:arg name="safety_k_position" default="20"/>
+  <xacro:arg name="name" default="ur5"/>
+
+  <!-- world anchoring to avoid “exploded” robot -->
+  <link name="world"/>
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/><child link="${prefix}base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- instantiate UR5 -->
+  <xacro:ur_robot
+      prefix="${prefix}"
+      ur_type="${ur_type}"
+      joint_limited="false"
+      safety_limits="${safety_limits}"
+      safety_pos_margin="${safety_pos_margin}"
+      safety_k_position="${safety_k_position}"
+      name="${name}"/>
+
+  <!-- simple IMU for digital-twin telemetry -->
+  <gazebo reference="${prefix}wrist_3_link">
+    <sensor type="imu" name="imu_sensor">
+      <update_rate>100</update_rate>
+      <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <topicName>imu</topicName>
+        <frameName>${prefix}wrist_3_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- ros2_control (fake hardware for sim) -->
+  <ros2_control name="UR5Hardware" type="system">
+    <hardware><plugin>fake_components/GenericSystem</plugin></hardware>
+    <joint name="${prefix}shoulder_pan_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/><state_interface name="effort"/>
+    </joint>
+    <joint name="${prefix}shoulder_lift_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/><state_interface name="effort"/>
+    </joint>
+    <joint name="${prefix}elbow_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/><state_interface name="effort"/>
+    </joint>
+    <joint name="${prefix}wrist_1_joint">
+      <command_interface nsame="position"/>
+      <state_interface name="position"/><state_interface name="effort"/>
+    </joint>
+    <joint name="${prefix}wrist_2_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/><state_interface name="effort"/>
+    </joint>
+    <joint name="${prefix}wrist_3_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/><state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+
+  <gazebo>
+    <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so"/>
+  </gazebo>
+</robot>
